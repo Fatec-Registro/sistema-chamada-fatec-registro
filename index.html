@@ -67,10 +67,15 @@
                 </div>
 
                 <div class="list-controls">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="toggleAll">
-                        <span class="checkmark"></span> Selecionar Todos
-                    </label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="toggleAll">
+                            <span class="checkmark"></span> Selecionar Todos
+                        </label>
+                        <button id="btnInvertSelection" class="btn btn-outline btn-sm" title="Inverter seleção atual">
+                            <i class="fas fa-exchange-alt"></i> Inverter
+                        </button>
+                    </div>
                     <span id="counter" class="counter-badge">0 presentes</span>
                 </div>
 
@@ -79,8 +84,8 @@
                 </div>
 
                 <div class="actions">
-                    <button id="btnSaveAttendance" class="btn btn-primary"><i class="fas fa-save"></i> Salvar
-                        Lista</button>
+                    <button id="btnSaveAttendance" class="btn btn-primary"><i class="fas fa-save"></i> Salvar /
+                        Atualizar Lista</button>
                     <button id="btnCopyText" class="btn btn-outline"><i class="fas fa-copy"></i> Copiar Texto</button>
                 </div>
             </div>
@@ -108,14 +113,47 @@
         </section>
 
         <section id="tab-config" class="tab-content">
+
+            <div class="card">
+                <h3><i class="fas fa-user-plus"></i> Novo Aluno (Manual)</h3>
+                <div class="grid-4">
+                    <div class="input-group">
+                        <label>RA *</label>
+                        <input type="text" id="newRa" placeholder="Apenas números">
+                    </div>
+                    <div class="input-group">
+                        <label>Nome Completo *</label>
+                        <input type="text" id="newNome" placeholder="Nome do aluno">
+                    </div>
+                    <div class="input-group">
+                        <label>Curso *</label>
+                        <input type="text" id="newCurso" placeholder="Ex: DSM">
+                    </div>
+                    <div class="input-group">
+                        <label>Período *</label>
+                        <select id="newPeriodo">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions" style="margin-top:10px">
+                    <button id="btnAddStudentManual" class="btn btn-primary btn-sm">Adicionar Aluno</button>
+                </div>
+            </div>
+
             <div class="card highlight-card">
-                <h3><i class="fas fa-file-import"></i> Importar Base</h3>
+                <h3><i class="fas fa-file-import"></i> Importar Base (Excel/CSV)</h3>
                 <div class="upload-controls">
                     <input type="file" id="fileInput" accept=".csv, .xlsx, .xls, .json" />
                     <button id="btnProcessFile" class="btn btn-primary">Carregar</button>
                     <button id="btnClearDb" class="btn btn-danger">Zerar Tudo</button>
                 </div>
-                <small>Colunas: <strong>RA, NOME, CURSO, PERIODO</strong></small>
+                <small>Colunas obrigatórias: <strong>RA, NOME, CURSO, PERIODO</strong></small>
             </div>
 
             <div class="card">
@@ -202,6 +240,21 @@
     <footer class="cps-footer">
         <p>Centro Paula Souza - Governo do Estado de São Paulo</p>
     </footer>
+
+    <div id="appModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Título</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Fechar</button>
+                <button id="modalActionBtn" class="btn btn-primary" style="display:none;">Salvar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="assets/js/model.js"></script>
     <script src="assets/js/view.js"></script>

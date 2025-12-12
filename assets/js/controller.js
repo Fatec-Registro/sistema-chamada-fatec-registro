@@ -1,4 +1,3 @@
-// Inicialização
 const model = new AttendanceModel();
 const view = new AttendanceView();
 
@@ -7,15 +6,12 @@ window.onload = () => {
     refreshUI();
     const dateInput = document.getElementById('chamadaData');
     if (dateInput) dateInput.valueAsDate = new Date();
-
-    // Seta data na aba de impressão também
     const printDate = document.getElementById('printData');
     if (printDate) printDate.valueAsDate = new Date();
 };
 
 function refreshUI() {
     view.updateStatus(model.DB.students.length);
-
     const courses = model.getAllCourses();
     const periods = model.getAllPeriods();
 
@@ -23,30 +19,21 @@ function refreshUI() {
     view.populateSelect('manageCurso', courses, document.getElementById('manageCurso').value);
     view.populateSelect('managePeriodo', periods, document.getElementById('managePeriodo').value);
     view.populateSelect('historyFilterPeriod', periods, document.getElementById('historyFilterPeriod').value);
+    view.populatePrintSelect(model.getUniqueClasses());
 
-    // NOVO: Atualiza combo de turmas na aba de impressão
-    const uniqueClasses = model.getUniqueClasses();
-    view.populatePrintSelect(uniqueClasses);
-
-    // Atualiza listas visíveis
     if (document.getElementById('tab-config').classList.contains('active')) renderDbTable();
     if (document.getElementById('tab-chamada').classList.contains('active')) updateStudentList();
     if (document.getElementById('tab-historico').classList.contains('active')) updateHistoryList();
 }
 
 function initEventListeners() {
-    // Abas
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const target = e.target.closest('.tab-btn'); // Garante pegar o botão mesmo se clicar no ícone
-            if (target) {
-                view.toggleTab(target.dataset.tab);
-                refreshUI();
-            }
+            const target = e.target.closest('.tab-btn');
+            if (target) { view.toggleTab(target.dataset.tab); refreshUI(); }
         });
     });
 
-    // Filtros Chamada
     document.getElementById('chamadaCurso').addEventListener('change', () => {
         const curso = document.getElementById('chamadaCurso').value;
         const periodos = model.getAllPeriods(curso);
@@ -55,29 +42,34 @@ function initEventListeners() {
     });
     document.getElementById('chamadaPeriodo').addEventListener('change', updateStudentList);
 
-    // Checkbox Chamada
+    // Seleção
     document.getElementById('toggleAll').addEventListener('change', (e) => {
         document.querySelectorAll('.attendance-check').forEach(cb => cb.checked = e.target.checked);
         updateCounter();
     });
 
-    // Event Delegation para checkboxes dinâmicos
+    // Inverter Seleção (NOVO)
+    document.getElementById('btnInvertSelection').addEventListener('click', () => {
+        document.querySelectorAll('.attendance-check').forEach(cb => {
+            cb.checked = !cb.checked;
+        });
+        updateCounter();
+    });
+
     document.getElementById('studentListContainer').addEventListener('change', (e) => {
         if (e.target.classList.contains('attendance-check')) updateCounter();
     });
 
-    // Botões
+    // Botões Principais
     document.getElementById('btnSaveAttendance').addEventListener('click', saveAttendance);
     document.getElementById('btnCopyText').addEventListener('click', copyToClipboard);
 
     // Gestão DB
     document.getElementById('btnProcessFile').addEventListener('click', processFile);
     document.getElementById('btnClearDb').addEventListener('click', () => {
-        if (confirm('Tem certeza? Isso apaga tudo!')) {
-            model.clearAll();
-            refreshUI();
-        }
+        if (confirm('Tem certeza? Isso apaga tudo!')) { model.clearAll(); refreshUI(); }
     });
+    document.getElementById('btnAddStudentManual').addEventListener('click', addManualStudent); // Manual Add
 
     // Filtros DB
     ['manageCurso', 'managePeriodo', 'manageSearch'].forEach(id => {
@@ -85,7 +77,6 @@ function initEventListeners() {
         if (el) el.addEventListener(id === 'manageSearch' ? 'keyup' : 'change', renderDbTable);
     });
 
-    // Bulk Actions
     const checkAll = document.getElementById('checkAllDB');
     if (checkAll) {
         checkAll.addEventListener('change', (e) => {
@@ -106,49 +97,56 @@ function initEventListeners() {
         updateHistoryList();
     });
 
-    // NOVO: Gerar PDF
     const btnPdf = document.getElementById('btnGeneratePDF');
     if (btnPdf) btnPdf.addEventListener('click', generatePDFList);
 }
 
-// --- Funções de Controle Específicas ---
+// --- CONTROLLERS ---
+
+function addManualStudent() {
+    const ra = document.getElementById('newRa').value.trim();
+    const nome = document.getElementById('newNome').value.trim();
+    const curso = document.getElementById('newCurso').value.trim().toUpperCase();
+    const periodo = document.getElementById('newPeriodo').value;
+
+    if (!ra || !nome || !curso) return alert("Preencha todos os campos obrigatórios.");
+
+    const result = model.addStudentManual(ra, nome, curso, periodo);
+    if (result.success) {
+        alert("Aluno adicionado com sucesso!");
+        document.getElementById('newRa').value = '';
+        document.getElementById('newNome').value = '';
+        document.getElementById('newCurso').value = '';
+        refreshUI();
+    } else {
+        alert(result.message);
+    }
+}
 
 function generatePDFList() {
     const date = document.getElementById('printData').value;
     const type = document.getElementById('printTipo').value;
     const classFilter = document.getElementById('printCursoPeriodo').value;
-
     if (!date) return alert('Selecione uma data.');
-
     let targetClasses = [];
-
-    if (classFilter === 'all') {
-        targetClasses = model.getUniqueClasses();
-    } else {
+    if (classFilter === 'all') targetClasses = model.getUniqueClasses();
+    else {
         const [curso, periodo] = classFilter.split('|');
         targetClasses = [{ curso, periodo }];
     }
-
     if (targetClasses.length === 0) return alert('Nenhuma turma encontrada.');
-
-    // Monta dados
     const listsData = targetClasses.map(cls => {
         const students = model.getStudents({ curso: cls.curso, periodo: cls.periodo });
         return { curso: cls.curso, periodo: cls.periodo, students: students };
     }).filter(l => l.students.length > 0);
-
-    if (listsData.length === 0) return alert('Nenhum aluno encontrado nas turmas selecionadas.');
-
+    if (listsData.length === 0) return alert('Nenhum aluno encontrado.');
     view.generatePDF(listsData, date, type);
 }
 
 function updateStudentList() {
     const curso = document.getElementById('chamadaCurso').value;
     const periodo = document.getElementById('chamadaPeriodo').value;
-    if (!curso || !periodo) {
-        view.renderStudentList([]);
-        return;
-    }
+    if (!curso || !periodo) { view.renderStudentList([]); return; }
     const students = model.getStudents({ curso, periodo });
     view.renderStudentList(students);
     updateCounter();
@@ -167,19 +165,22 @@ function saveAttendance() {
 
     if (!date || !period || !curso) return alert('Preencha todos os campos.');
 
-    if (model.checkDuplicity(date, curso, period, type)) {
-        if (!confirm(`Já existe lista de ${type} para esta turma. Criar duplicata?`)) return;
+    // Verificar se já existe e perguntar se quer atualizar (Upsert)
+    const exists = model.checkDuplicity(date, curso, period, type);
+    if (exists && !confirm('Já existe uma lista para esta data/turma. Deseja ATUALIZAR os registros existentes?')) {
+        return;
     }
 
     const presentRAs = Array.from(document.querySelectorAll('.attendance-check:checked')).map(cb => cb.value);
 
-    model.addAttendance({
-        id: Date.now(),
-        date, course: curso, period, type, presentRAs,
-        timestamp: new Date().toISOString()
+    const result = model.saveAttendanceRecord({
+        date, course: curso, period, type, presentRAs
     });
 
-    alert('Salvo com sucesso!');
+    if (result.action === 'updated') alert('Lista atualizada com sucesso!');
+    else alert('Lista criada com sucesso!');
+
+    if (document.getElementById('tab-historico').classList.contains('active')) updateHistoryList();
 }
 
 function updateHistoryList() {
@@ -187,22 +188,36 @@ function updateHistoryList() {
     const period = document.getElementById('historyFilterPeriod').value;
     const records = model.getAttendanceHistory({ search, period });
 
-    view.renderHistory(records,
-        (id) => { if (confirm('Excluir lista?')) { model.removeAttendance(id); updateHistoryList(); } },
-        (id) => { downloadTxt(id); },
-        (id) => {
-            const rec = model.DB.attendance.find(r => r.id === id);
-            const newType = rec.type === 'Entrada' ? 'Saída' : 'Entrada';
-            if (confirm(`Mudar para ${newType}?`)) {
-                model.updateAttendanceType(id);
+    view.renderHistory(records, {
+        onDelete: (id) => { if (confirm('Excluir lista?')) { model.removeAttendance(id); updateHistoryList(); } },
+        onDownload: (id) => { downloadTxt(id); },
+        onView: (id) => {
+            const rec = model.getRecordById(id);
+            if (!rec) return;
+            const names = rec.presentRAs.map(ra => {
+                const s = model.DB.students.find(st => st.ra == ra);
+                return s ? s.nome : `RA:${ra}`;
+            });
+            view.renderPreviewModal(rec, names);
+        },
+        onEdit: (id) => {
+            const rec = model.getRecordById(id);
+            if (!rec) return;
+            const allStudents = model.getStudents({ curso: rec.course, periodo: rec.period });
+
+            view.renderEditModal(rec, allStudents, () => {
+                const checked = Array.from(document.querySelectorAll('.edit-check:checked')).map(cb => cb.value);
+                model.updateAttendanceList(id, checked);
+                view.closeModal();
                 updateHistoryList();
-            }
+                alert('Lista editada com sucesso!');
+            });
         }
-    );
+    });
 }
 
 function downloadTxt(id) {
-    const rec = model.DB.attendance.find(r => r.id === id);
+    const rec = model.getRecordById(id);
     if (!rec) return;
     const names = rec.presentRAs.map(ra => {
         const s = model.DB.students.find(st => st.ra == ra);

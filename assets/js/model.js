@@ -12,10 +12,13 @@ class AttendanceModel {
             const saved = localStorage.getItem('chamada_db_v3');
             if (saved) {
                 this.DB = JSON.parse(saved);
+                // Migração: garante que registros antigos tenham array de logs
+                this.DB.attendance.forEach(r => {
+                    if (!r.logs) r.logs = [{ action: 'Importado/Criado', time: r.timestamp }];
+                });
             }
         } catch (e) {
             console.error("Erro ao carregar dados locais:", e);
-            // Se der erro, inicia vazio para não travar a tela
             this.DB = { students: [], attendance: [] };
         }
     }
@@ -24,13 +27,23 @@ class AttendanceModel {
         localStorage.setItem('chamada_db_v3', JSON.stringify(this.DB));
     }
 
-    // --- Student Logic ---
+    // --- ALUNOS ---
     addStudents(newStudents) {
         const map = new Map();
         this.DB.students.forEach(s => map.set(s.ra, s));
         newStudents.forEach(s => map.set(s.ra, s));
         this.DB.students = Array.from(map.values());
         this.save();
+    }
+
+    // Nova função manual com validação
+    addStudentManual(ra, nome, curso, periodo) {
+        if (this.DB.students.some(s => s.ra === ra)) {
+            return { success: false, message: 'RA já cadastrado!' };
+        }
+        this.DB.students.push({ ra, nome, curso, periodo });
+        this.save();
+        return { success: true };
     }
 
     deleteStudent(ra) {
@@ -53,10 +66,54 @@ class AttendanceModel {
         }
     }
 
-    // --- Attendance Logic ---
-    addAttendance(record) {
-        this.DB.attendance.push(record);
-        this.save();
+    // --- CHAMADA (Lógica Atualizada) ---
+
+    // UPSERT: Atualiza se existir, Cria se não
+    saveAttendanceRecord(recordData) {
+        const { date, course, period, type, presentRAs } = recordData;
+
+        const existingIndex = this.DB.attendance.findIndex(r =>
+            r.date === date &&
+            r.period === period &&
+            r.course === course &&
+            r.type === type
+        );
+
+        const now = new Date().toLocaleString('pt-BR');
+
+        if (existingIndex >= 0) {
+            // ATUALIZAR
+            const record = this.DB.attendance[existingIndex];
+            record.presentRAs = presentRAs;
+            record.logs.push({ action: 'Atualizado (Sobrescrito)', time: now });
+            this.save();
+            return { action: 'updated', id: record.id };
+        } else {
+            // CRIAR NOVO
+            const newRecord = {
+                id: Date.now(),
+                date, course, period, type, presentRAs,
+                timestamp: new Date().toISOString(),
+                logs: [{ action: 'Criado', time: now }]
+            };
+            this.DB.attendance.push(newRecord);
+            this.save();
+            return { action: 'created', id: newRecord.id };
+        }
+    }
+
+    getRecordById(id) {
+        return this.DB.attendance.find(r => r.id === id);
+    }
+
+    // Atualiza lista via edição no Histórico
+    updateAttendanceList(id, newPresentRAs) {
+        const record = this.getRecordById(id);
+        if (record) {
+            record.presentRAs = newPresentRAs;
+            record.logs.push({ action: 'Editado Manualmente (Histórico)', time: new Date().toLocaleString('pt-BR') });
+            this.save();
+        }
     }
 
     removeAttendance(id) {
@@ -64,26 +121,7 @@ class AttendanceModel {
         this.save();
     }
 
-    updateAttendanceType(id) {
-        const record = this.DB.attendance.find(r => r.id === id);
-        if (record) {
-            record.type = record.type === 'Entrada' ? 'Saída' : 'Entrada';
-            this.save();
-            return record;
-        }
-        return null;
-    }
-
-    checkDuplicity(date, course, period, type) {
-        return this.DB.attendance.some(r =>
-            r.date === date &&
-            r.period === period &&
-            r.course === course &&
-            r.type === type
-        );
-    }
-
-    // --- Getters ---
+    // --- GETTERS ---
     getStudents(filter = {}) {
         return this.DB.students.filter(s => {
             let match = true;
@@ -107,13 +145,9 @@ class AttendanceModel {
         return [...new Set(list.map(s => s.periodo))].sort();
     }
 
-    // NOVO: Obtém lista única de Turmas (Curso+Período) para o filtro de impressão
     getUniqueClasses() {
         const classes = new Set();
-        this.DB.students.forEach(s => {
-            classes.add(`${s.curso}|${s.periodo}`);
-        });
-
+        this.DB.students.forEach(s => classes.add(`${s.curso}|${s.periodo}`));
         return Array.from(classes).map(str => {
             const [curso, periodo] = str.split('|');
             return { curso, periodo };
@@ -135,6 +169,12 @@ class AttendanceModel {
             });
         }
         return records;
+    }
+
+    checkDuplicity(date, course, period, type) {
+        return this.DB.attendance.some(r =>
+            r.date === date && r.period === period && r.course === course && r.type === type
+        );
     }
 
     clearAll() {
