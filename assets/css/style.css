@@ -1,8 +1,6 @@
 :root {
-    [cite_start]
-    /* Cores Institucionais - Baseado no Manual CPS [cite: 251] */
+    /* Cores Institucionais - Baseado no Manual CPS */
     --cps-red: #B20000;
-    /* CMYK 0 100 100 30 convertido */
     --cps-black: #000000;
     --cps-grey: #333333;
     --bg-color: #f5f5f5;
@@ -17,27 +15,21 @@
 
     /* Espaçamentos e Tamanhos */
     --container-width: 1000px;
-    --header-height-mobile: auto;
-    --header-height-desktop: 80px;
 }
 
 /* --- Reset e Base --- */
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    /* Remove highlight azul no mobile */
 }
 
 body {
     font-family: 'Verdana', sans-serif;
-    [cite_start]
-    /* Fonte Oficial [cite: 423] */
     margin: 0;
     padding: 0;
     background: var(--bg-color);
     color: var(--cps-grey);
     font-size: 16px;
-    /* Tamanho base melhor para leitura mobile */
     line-height: 1.5;
 }
 
@@ -56,7 +48,6 @@ body {
     padding: 0 1.5rem;
     display: flex;
     flex-direction: column;
-    /* Pilha vertical no mobile */
     align-items: center;
     gap: 1rem;
     text-align: center;
@@ -65,7 +56,6 @@ body {
 .logo-cps,
 .logo-gov {
     height: 40px;
-    /* Logos menores no mobile */
     width: auto;
     object-fit: contain;
 }
@@ -93,12 +83,10 @@ body {
     padding: 1.5rem;
 }
 
-/* Cards (Cartões de Conteúdo) */
 .card {
     background: var(--surface-color);
     padding: 1.5rem;
     border-radius: 12px;
-    /* Bordas mais arredondadas (moderno) */
     border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem;
@@ -109,7 +97,6 @@ body {
     border-left: 5px solid var(--cps-red);
 }
 
-/* Títulos internos */
 h3 {
     margin-top: 0;
     color: var(--cps-grey);
@@ -125,17 +112,13 @@ h3 {
     gap: 0.5rem;
     margin-bottom: 0;
     overflow-x: auto;
-    /* Permite rolagem horizontal se não couber */
     padding-bottom: 2px;
-    /* Espaço para scrollbar invisível */
     -webkit-overflow-scrolling: touch;
 }
 
 .tab-btn {
     flex: 1;
-    /* Distribui espaço igualmente */
     min-width: 120px;
-    /* Largura mínima para não quebrar texto */
     padding: 1rem 0.5rem;
     background: #e2e2e2;
     border: none;
@@ -147,14 +130,12 @@ h3 {
     color: #666;
     transition: all 0.2s;
     white-space: nowrap;
-    /* Não quebra linha no botão */
 }
 
 .tab-btn.active {
     background: var(--surface-color);
     color: var(--cps-red);
     border-top: 3px solid var(--cps-red);
-    /* Indicador visual claro */
 }
 
 .tab-content {
@@ -179,7 +160,6 @@ h3 {
 }
 
 /* --- Formulários e Grids (Mobile First) --- */
-/* Por padrão, grids são 1 coluna (pilha) */
 .grid-3,
 .grid-4 {
     display: grid;
@@ -203,23 +183,11 @@ h3 {
 .input-group select {
     width: 100%;
     padding: 0.75rem;
-    /* Área de toque maior */
     border: 1px solid #cbd5e1;
     border-radius: 6px;
     font-family: inherit;
     font-size: 1rem;
-    /* Fonte legível no mobile (evita zoom automático no iOS) */
     background-color: #fff;
-    appearance: none;
-    /* Remove estilo padrão do sistema */
-}
-
-/* Fix para select no Firefox/Chrome para mostrar seta */
-.input-group select {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1em;
 }
 
 /* --- Botões --- */
@@ -228,14 +196,12 @@ h3 {
 .table-actions {
     display: flex;
     flex-direction: column;
-    /* Botões empilhados no mobile */
     gap: 0.75rem;
     margin-top: 1.5rem;
 }
 
 .btn {
     width: 100%;
-    /* Botão largura total no mobile */
     padding: 0.875rem 1.5rem;
     border: none;
     border-radius: 6px;
@@ -247,11 +213,15 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: transform 0.1s, opacity 0.2s;
+    transition: opacity 0.2s;
 }
 
 .btn:active {
     transform: scale(0.98);
+}
+
+.btn:hover {
+    opacity: 0.9;
 }
 
 .btn-primary {
@@ -276,7 +246,7 @@ h3 {
     width: auto;
 }
 
-/* --- Listas e Checkboxes --- */
+/* --- Listas --- */
 .list-controls {
     display: flex;
     flex-direction: column;
@@ -302,7 +272,6 @@ h3 {
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: bold;
-    text-align: center;
     align-self: flex-start;
 }
 
@@ -311,7 +280,6 @@ h3 {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     max-height: 50vh;
-    /* Altura responsiva */
     overflow-y: auto;
     margin-top: 1rem;
     background: #fafafa;
@@ -326,7 +294,6 @@ h3 {
     cursor: pointer;
 }
 
-/* Input checkbox grande para facilitar toque */
 .student-item input[type="checkbox"] {
     width: 24px;
     height: 24px;
@@ -341,11 +308,10 @@ h3 {
     font-style: italic;
 }
 
-/* --- Tabela Responsiva --- */
+/* --- Tabela --- */
 .table-wrapper {
     width: 100%;
     overflow-x: auto;
-    /* Scroll horizontal se a tabela for larga */
     border: 1px solid var(--border-color);
     border-radius: 8px;
 }
@@ -353,7 +319,6 @@ h3 {
 .data-table {
     width: 100%;
     min-width: 600px;
-    /* Força largura mínima para ativar scroll no mobile */
     border-collapse: collapse;
     font-size: 0.9rem;
 }
@@ -371,10 +336,9 @@ h3 {
     color: var(--cps-grey);
 }
 
-/* --- Histórico Card (Mobile) --- */
+/* --- Histórico Card --- */
 .history-card {
     flex-direction: column;
-    /* Empilha info e botões */
     align-items: flex-start;
     gap: 1rem;
 }
@@ -396,12 +360,37 @@ h3 {
     border-top: 1px solid #e2e8f0;
 }
 
+.tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tag.entrada {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.tag.saida {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+}
+
+/* --- Status Bar --- */
+.status-bar {
+    text-align: right;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    color: var(--cps-red);
+    font-weight: bold;
+}
+
 /* =========================================
-   MEDIA QUERIES (Telas Maiores / Desktop)
+   MEDIA QUERIES (Desktop)
    ========================================= */
 @media (min-width: 768px) {
-
-    /* Header Horizontal */
     .header-container {
         flex-direction: row;
         justify-content: space-between;
@@ -416,7 +405,6 @@ h3 {
         height: 45px;
     }
 
-    /* Grids em Colunas */
     .grid-3 {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -425,32 +413,27 @@ h3 {
         grid-template-columns: repeat(4, 1fr);
     }
 
-    /* Botões lado a lado */
     .actions,
     .upload-controls,
     .table-actions {
         flex-direction: row;
         align-items: flex-end;
-        /* Alinha com inputs */
     }
 
     .btn {
         width: auto;
     }
 
-    /* Botão tamanho do conteúdo */
     .btn.full-width {
         width: 100%;
     }
 
-    /* Controles de Lista */
     .list-controls {
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
     }
 
-    /* Histórico Horizontal */
     .history-card {
         flex-direction: row;
         align-items: center;

@@ -8,9 +8,15 @@ class AttendanceModel {
     }
 
     load() {
-        const saved = localStorage.getItem('chamada_db_v3');
-        if (saved) {
-            this.DB = JSON.parse(saved);
+        try {
+            const saved = localStorage.getItem('chamada_db_v3');
+            if (saved) {
+                this.DB = JSON.parse(saved);
+            }
+        } catch (e) {
+            console.error("Erro ao carregar dados locais:", e);
+            // Se der erro, inicia vazio para não travar a tela
+            this.DB = { students: [], attendance: [] };
         }
     }
 
@@ -21,11 +27,8 @@ class AttendanceModel {
     // --- Student Logic ---
     addStudents(newStudents) {
         const map = new Map();
-        // Preserva existentes
         this.DB.students.forEach(s => map.set(s.ra, s));
-        // Adiciona/Atualiza novos
         newStudents.forEach(s => map.set(s.ra, s));
-
         this.DB.students = Array.from(map.values());
         this.save();
     }
@@ -102,6 +105,22 @@ class AttendanceModel {
         let list = this.DB.students;
         if (course) list = list.filter(s => s.curso === course);
         return [...new Set(list.map(s => s.periodo))].sort();
+    }
+
+    // NOVO: Obtém lista única de Turmas (Curso+Período) para o filtro de impressão
+    getUniqueClasses() {
+        const classes = new Set();
+        this.DB.students.forEach(s => {
+            classes.add(`${s.curso}|${s.periodo}`);
+        });
+
+        return Array.from(classes).map(str => {
+            const [curso, periodo] = str.split('|');
+            return { curso, periodo };
+        }).sort((a, b) => {
+            if (a.curso !== b.curso) return a.curso.localeCompare(b.curso);
+            return a.periodo.localeCompare(b.periodo, undefined, { numeric: true });
+        });
     }
 
     getAttendanceHistory(filter = {}) {

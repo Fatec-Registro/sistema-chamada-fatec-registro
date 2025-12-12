@@ -7,6 +7,9 @@
     <title>Sistema de Chamada - Padrão CPS</title>
 
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -15,12 +18,13 @@
 
     <header class="cps-header">
         <div class="header-container">
-            <img src="assets/img/logo_cps.png" alt="Centro Paula Souza" class="logo-cps">
+            <img src="assets/img/logo_cps.png" alt="Centro Paula Souza" class="logo-cps" crossorigin="anonymous">
             <div class="header-title">
                 <h1>Sistema de Chamada</h1>
                 <span>Gestão Docente</span>
             </div>
-            <img src="assets/img/logo_gov_sp.png" alt="Governo do Estado de São Paulo" class="logo-gov">
+            <img src="assets/img/logo_gov_sp.png" alt="Governo do Estado de São Paulo" class="logo-gov"
+                crossorigin="anonymous">
         </div>
     </header>
 
@@ -31,6 +35,7 @@
             <button class="tab-btn active" data-tab="chamada">Realizar Chamada</button>
             <button class="tab-btn" data-tab="historico">Histórico</button>
             <button class="tab-btn" data-tab="config">Gestão de Alunos</button>
+            <button class="tab-btn" data-tab="print"><i class="fas fa-print"></i> Imprimir</button>
         </nav>
 
         <section id="tab-chamada" class="tab-content active">
@@ -49,7 +54,7 @@
                     <div class="input-group">
                         <label>Período</label>
                         <select id="chamadaPeriodo">
-                            <option value="">Aguardando Curso...</option>
+                            <option value="">Aguardando...</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -64,8 +69,7 @@
                 <div class="list-controls">
                     <label class="checkbox-container">
                         <input type="checkbox" id="toggleAll">
-                        <span class="checkmark"></span>
-                        Selecionar Todos
+                        <span class="checkmark"></span> Selecionar Todos
                     </label>
                     <span id="counter" class="counter-badge">0 presentes</span>
                 </div>
@@ -111,7 +115,7 @@
                     <button id="btnProcessFile" class="btn btn-primary">Carregar</button>
                     <button id="btnClearDb" class="btn btn-danger">Zerar Tudo</button>
                 </div>
-                <small>Colunas obrigatórias: <strong>RA, NOME, CURSO, PERIODO</strong></small>
+                <small>Colunas: <strong>RA, NOME, CURSO, PERIODO</strong></small>
             </div>
 
             <div class="card">
@@ -158,6 +162,41 @@
                 </div>
             </div>
         </section>
+
+        <section id="tab-print" class="tab-content">
+            <div class="card">
+                <h3><i class="fas fa-print"></i> Imprimir Listas de Presença</h3>
+                <p style="color:#666; margin-bottom:20px;">Gere arquivos PDF para coleta de assinaturas em sala de aula.
+                </p>
+
+                <div class="grid-3">
+                    <div class="input-group">
+                        <label>Data da Lista</label>
+                        <input type="date" id="printData">
+                    </div>
+                    <div class="input-group">
+                        <label>Tipo</label>
+                        <select id="printTipo">
+                            <option value="Entrada">Entrada</option>
+                            <option value="Saída">Saída</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Filtro de Turma</label>
+                        <select id="printCursoPeriodo">
+                            <option value="all">Todas as Turmas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="actions" style="margin-top:20px;">
+                    <button id="btnGeneratePDF" class="btn btn-primary">
+                        <i class="fas fa-file-pdf"></i> Gerar PDF
+                    </button>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer class="cps-footer">

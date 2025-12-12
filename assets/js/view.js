@@ -1,6 +1,5 @@
 class AttendanceView {
     constructor() {
-        // Elementos DOM
         this.els = {
             dbStatus: document.getElementById('dbStatus'),
             studentList: document.getElementById('studentListContainer'),
@@ -13,7 +12,8 @@ class AttendanceView {
                 chamadaPeriodo: document.getElementById('chamadaPeriodo'),
                 manageCurso: document.getElementById('manageCurso'),
                 managePeriodo: document.getElementById('managePeriodo'),
-                historyFilter: document.getElementById('historyFilterPeriod')
+                historyFilter: document.getElementById('historyFilterPeriod'),
+                printCursoPeriodo: document.getElementById('printCursoPeriodo')
             }
         };
     }
@@ -24,24 +24,45 @@ class AttendanceView {
 
     populateSelect(elementId, items, selectedValue = null) {
         const select = document.getElementById(elementId);
-        const firstText = select.options[0].text;
+        if (!select) return;
+        const firstText = select.options[0] ? select.options[0].text : 'Selecione...';
         select.innerHTML = `<option value="">${firstText}</option>`;
 
         items.forEach(item => {
             if (item) {
                 const opt = document.createElement('option');
                 opt.value = item;
-                opt.textContent = item; // Para períodos, pode adicionar "Período " antes
+                opt.textContent = item;
                 select.appendChild(opt);
             }
         });
         if (selectedValue && items.includes(selectedValue)) select.value = selectedValue;
     }
 
+    populatePrintSelect(classes) {
+        const select = this.els.selects.printCursoPeriodo;
+        if (!select) return;
+
+        const current = select.value;
+        select.innerHTML = '<option value="all">Todas as Turmas Cadastradas</option>';
+
+        classes.forEach(c => {
+            const val = `${c.curso}|${c.periodo}`;
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = `${c.curso} - Período ${c.periodo}`;
+            select.appendChild(opt);
+        });
+
+        if (current && Array.from(select.options).some(o => o.value === current)) {
+            select.value = current;
+        }
+    }
+
     renderStudentList(students) {
         this.els.studentList.innerHTML = '';
         if (students.length === 0) {
-            this.els.studentList.innerHTML = '<div class="empty-state">Nenhum aluno encontrado para os filtros.</div>';
+            this.els.studentList.innerHTML = '<div class="empty-state">Nenhum aluno encontrado.</div>';
             return;
         }
 
@@ -73,7 +94,7 @@ class AttendanceView {
         records.forEach(rec => {
             const [ano, mes, dia] = rec.date.split('-');
             const div = document.createElement('div');
-            div.className = 'history-card student-item'; // Reutilizando estilo
+            div.className = 'history-card student-item';
             div.style.justifyContent = 'space-between';
 
             div.innerHTML = `
@@ -96,7 +117,6 @@ class AttendanceView {
                 </div>
             `;
 
-            // Event Listeners isolados
             div.querySelector('.tag').onclick = () => onToggleType(rec.id);
             div.querySelector('.btn-download').onclick = () => onDownload(rec.id);
             div.querySelector('.btn-delete').onclick = () => onDelete(rec.id);
@@ -144,7 +164,125 @@ class AttendanceView {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-        document.getElementById(`tab-${tabId}`).classList.add('active');
-        document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+        const target = document.getElementById(`tab-${tabId}`);
+        if (target) target.classList.add('active');
+
+        const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (btn) btn.classList.add('active');
+    }
+
+    // --- GERAÇÃO DE PDF (Atualizada com correções) ---
+    async generatePDF(listsData, dateStr, type) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+        const cpsRed = [178, 0, 0];
+        const black = [0, 0, 0];
+
+        // Pega as imagens do DOM
+        const imgCps = document.querySelector('.logo-cps');
+        const imgGov = document.querySelector('.logo-gov');
+
+        const getBase64Image = (img) => {
+            if (!img) return null;
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL("image/png");
+        };
+
+        const logoCpsData = getBase64Image(imgCps);
+        const logoGovData = getBase64Image(imgGov);
+
+        // Lógica de Proporção (Aspect Ratio)
+        const calculateDims = (img, fixedHeight) => {
+            if (!img || img.naturalWidth === 0) return { w: 40, h: fixedHeight }; // Fallback
+            const ratio = img.naturalWidth / img.naturalHeight;
+            return { w: fixedHeight * ratio, h: fixedHeight };
+        };
+
+        const cpsDims = calculateDims(imgCps, 15); // Altura fixa de 15mm
+        const govDims = calculateDims(imgGov, 15);
+
+        const [a, m, d] = dateStr.split('-');
+        const dataFormatada = `${d}/${m}/${a}`;
+
+        listsData.forEach((list, index) => {
+            if (index > 0) doc.addPage();
+
+            // Logos (Posicionados com largura dinâmica para não distorcer)
+            if (logoCpsData) doc.addImage(logoCpsData, 'PNG', 10, 10, cpsDims.w, cpsDims.h);
+
+            // Logo do governo alinhado à direita (287mm é a margem direita aprox)
+            if (logoGovData) doc.addImage(logoGovData, 'PNG', 287 - govDims.w, 10, govDims.w, govDims.h);
+
+            // Cabeçalho Centralizado
+            const centerX = 148.5; // Metade da folha A4 paisagem (297mm / 2)
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(...cpsRed);
+            doc.text('LISTA DE PRESENÇA', centerX, 18, { align: 'center' });
+
+            doc.setFontSize(11); // Fonte levemente menor
+            doc.setTextColor(...black);
+            doc.text(`Curso: ${list.curso} - Período: ${list.periodo}`, centerX, 25, { align: 'center' });
+
+            // Linha com Data, Tipo e Quantidade
+            const infoLine = `Data: ${dataFormatada}   |   Tipo: ${type}   |   Qtd: ${list.students.length} alunos`;
+            doc.text(infoLine, centerX, 31, { align: 'center' });
+
+            // Linha divisória fina
+            doc.setDrawColor(...cpsRed);
+            doc.setLineWidth(0.5);
+            doc.line(10, 36, 287, 36);
+
+            // Tabela Compacta
+            const bodyData = list.students.map(s => [s.ra, s.nome, '']);
+
+            doc.autoTable({
+                startY: 40,
+                head: [['RA', 'NOME DO ALUNO', 'ASSINATURA']],
+                body: bodyData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: cpsRed,
+                    textColor: 255,
+                    halign: 'center',
+                    fontSize: 10, // Fonte do cabeçalho
+                    cellPadding: 2
+                },
+                styles: {
+                    fontSize: 9, // Fonte menor para economizar espaço
+                    cellPadding: 1.5, // Menos "gordura" nas células
+                    valign: 'middle',
+                    lineColor: [200, 200, 200],
+                    lineWidth: 0.1
+                },
+                columnStyles: {
+                    0: { cellWidth: 35, halign: 'center' }, // RA
+                    1: { cellWidth: 100 }, // Nome
+                    2: { cellWidth: 'auto' } // Assinatura
+                },
+                didParseCell: function (data) {
+                    // Altura da linha reduzida para 8.5mm (suficiente para assinar, mas econômico)
+                    if (data.section === 'body') {
+                        data.row.height = 8.5;
+                    }
+                },
+                // Margem inferior para não bater no rodapé se a lista for longa
+                margin: { bottom: 15 }
+            });
+
+            // Rodapé
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(`Centro Paula Souza - Governo do Estado de São Paulo`, centerX, 202, { align: 'center' });
+        });
+
+        doc.save(`Listas_Presenca_${dateStr}_${type}.pdf`);
     }
 }
