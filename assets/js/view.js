@@ -179,7 +179,7 @@ class AttendanceView {
 
         let html = `
             <div style="margin-bottom:10px;">Marque ou desmarque os alunos:</div>
-            <div id="editListContainer" style="max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:6px;">
+            <div id="editListContainer" style="max-height:300px; overflow-y:auto; border:1px solid black; padding:10px; border-radius:6px;">
         `;
 
         allStudents.forEach(s => {
@@ -297,13 +297,20 @@ class AttendanceView {
                 body: bodyData,
                 theme: 'grid',
                 headStyles: { fillColor: cpsRed, textColor: 255, halign: 'center', fontSize: 10, cellPadding: 2 },
-                styles: { fontSize: 9, cellPadding: 1.5, valign: 'middle', lineColor: [200, 200, 200], lineWidth: 0.1 },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 1.5,
+                    valign: 'middle',
+                    lineColor: [0, 0, 0], // Cor da borda: Preto
+                    lineWidth: 0.1,
+                    textColor: [0, 0, 0]  // Cor do texto: Preto (NOVO)
+                },
                 columnStyles: { 0: { cellWidth: 35, halign: 'center' }, 1: { cellWidth: 100 }, 2: { cellWidth: 'auto' } },
                 didParseCell: function (data) { if (data.section === 'body') { data.row.height = 8.5; } },
                 margin: { bottom: 15 }
             });
             doc.setFontSize(8);
-            doc.setTextColor(100);
+            doc.setTextColor(0);
             doc.text(`Centro Paula Souza - Governo do Estado de São Paulo`, centerX, 202, { align: 'center' });
         });
         doc.save(`Listas_Presenca_${dateStr}_${type}.pdf`);
